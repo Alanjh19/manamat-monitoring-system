@@ -1,0 +1,515 @@
+/* STYLE.CSS - MANAMAT Logistics Portal */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Paleta de colores en OKLCH */
+    --primary: oklch(0.25 0.08 250);      /* Slate Blue profundo */
+    --primary-light: oklch(0.35 0.10 250);
+    --accent-blue: oklch(0.60 0.18 250);   /* Electric Blue */
+    --accent-green: oklch(0.65 0.20 140);  /* Emerald Green */
+    --accent-orange: oklch(0.68 0.18 45);   /* Amber/Orange */
+    --accent-red: oklch(0.60 0.22 25);     /* Coral Red */
+    
+    /* Superficies y fondos */
+    --bg-base: oklch(0.97 0.01 250);
+    --bg-surface: oklch(0.99 0.005 250);
+    --bg-surface-glass: rgba(255, 255, 255, 0.75);
+    --border: oklch(0.90 0.01 250);
+    --border-focus: oklch(0.70 0.10 250);
+    
+    /* Textos */
+    --text-main: oklch(0.18 0.02 250);
+    --text-muted: oklch(0.55 0.02 250);
+    --text-white: oklch(0.99 0.005 250);
+    
+    /* Fuentes y sombras */
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.15);
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* HEADER PRINCIPAL */
+.app-header {
+    background-color: var(--primary);
+    color: var(--text-white);
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    background-color: var(--accent-blue);
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.brand-title {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 20px;
+}
+
+/* CONTENEDOR PRINCIPAL LADO A LADO */
+.main-viewport {
+    flex: 1;
+    display: flex;
+    height: calc(100dvh - 65px);
+}
+
+/* PANEL IZQUIERDO: SIMULADOR OPERADOR (MOBILE) */
+.operator-panel {
+    width: 420px;
+    background-color: oklch(0.12 0.01 250); /* Fondo oscuro de contraste */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+}
+
+/* MARCO DEL SMARTPHONE */
+.smartphone-frame {
+    width: 360px;
+    height: 690px;
+    background-color: #000000;
+    border: 12px solid #1e293b;
+    border-radius: 40px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Camara notch */
+.smartphone-frame::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 18px;
+    background-color: #1e293b;
+    border-radius: 20px;
+    z-index: 100;
+}
+
+/* Contenido de la pantalla móvil */
+.phone-screen {
+    flex: 1;
+    background-color: var(--bg-base);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px 16px 16px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+/* Pantalla encabezado */
+.phone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-top: 8px;
+}
+
+.phone-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phone-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--accent-blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.phone-user-info h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.phone-user-info span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Estado de carga */
+.order-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+}
+
+.order-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--primary);
+    display: flex;
+    justify-content: space-between;
+}
+
+.order-spec {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.weight-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: oklch(0.95 0.01 250);
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Botones de acción del móvil */
+.phone-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.phone-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.phone-btn-primary {
+    background-color: var(--accent-blue);
+    color: white;
+}
+
+.phone-btn-primary:hover {
+    background-color: var(--primary-light);
+}
+
+.phone-btn-disabled {
+    background-color: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* PANEL DERECHO: CONSOLA SUPERVISOR (DESKTOP) */
+.supervisor-panel {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* CONTROLES FLOTANTES EN EL MAPA (GLASSMORPHISM) */
+.supervisor-left-overlay {
+    position: absolute;
+    top: 24px;
+    bottom: 24px;
+    left: 24px;
+    z-index: 10;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.supervisor-right-overlay {
+    position: absolute;
+    top: 24px;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+    overflow-y: auto;
+    padding-left: 4px;
+}
+
+.supervisor-left-overlay::-webkit-scrollbar,
+.supervisor-right-overlay::-webkit-scrollbar {
+    width: 4px;
+}
+
+.supervisor-left-overlay::-webkit-scrollbar-thumb,
+.supervisor-right-overlay::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+.glass-card {
+    background-color: var(--bg-surface-glass);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-md);
+    pointer-events: auto;
+}
+
+/* Estilos para colapsar tarjetas */
+.card-content {
+    transition: max-height 0.3s ease-in-out, opacity 0.2s, margin-top 0.2s;
+    max-height: 800px;
+    opacity: 1;
+}
+
+.card-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+}
+
+.toggle-collapse-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    transition: color 0.15s;
+}
+
+.toggle-collapse-btn:hover {
+    color: var(--primary-light);
+}
+
+.overlay-title {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--primary);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 6px;
+}
+
+/* Estadisticas */
+.mini-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-box {
+    background: rgba(255,255,255,0.4);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.6);
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.stat-value {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+/* Buscador */
+.search-container {
+    position: relative;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    width: 100%;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    max-height: 180px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-md);
+    display: none;
+    z-index: 1000;
+}
+
+.suggestion-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.15s;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: var(--bg-base);
+}
+
+/* Bitacora de eventos */
+.event-log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-entry {
+    font-size: 0.7rem;
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-blue);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Marcadores personalizados en Leaflet */
+.custom-div-icon {
+    background: none;
+    border: none;
+}
+
+.map-icon-container {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* Alerta de Desvío */
+.alert-banner {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background-color: var(--accent-red);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: pulseRed 2s infinite;
+    z-index: 1000;
+}
+
+@keyframes pulseRed {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}

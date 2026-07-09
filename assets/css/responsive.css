@@ -1,0 +1,61 @@
+/* RESPONSIVE.CSS - Estilos Adaptativos Adicionales para ManamatGPS */
+
+@media (max-width: 1024px) {
+    .main-viewport {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .operator-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+    }
+
+    .smartphone-frame {
+        width: 100%;
+        max-width: 360px;
+        height: 620px;
+    }
+
+    .supervisor-panel {
+        height: 600px;
+        position: relative;
+    }
+
+    .supervisor-left-overlay,
+    .supervisor-right-overlay {
+        width: calc(100% - 48px);
+        left: 24px;
+        right: 24px;
+        bottom: auto;
+    }
+
+    .supervisor-right-overlay {
+        top: auto;
+        bottom: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .brand-section {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .supervisor-left-overlay,
+    .supervisor-right-overlay {
+        width: calc(100% - 24px);
+        left: 12px;
+        right: 12px;
+    }
+}
