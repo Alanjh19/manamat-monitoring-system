@@ -4,6 +4,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 docs/documento*.md
+docs/documento*.pdf
 docs/diagrams/architecture_diagram.png
 docs/diagrams/state_machine_diagram.png
+
 
