@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANAMAT Logistics Portal v2 - Simulador de Entrega de Materiales</title>
+    
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    
+    <!-- Estilos de la aplicación -->
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    
+    <style>
+        #alert-sobrecarga {
+            background-color: var(--accent-orange);
+            color: var(--primary);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            margin-top: 10px;
+            font-weight: 700;
+            display: none;
+        }
+
+        /* Barra de progreso */
+        .progress-container {
+            margin-top: 12px;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(0,0,0,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #22c55e);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        /* Controles del supervisor */
+        .supervisor-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sup-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: rgba(255,255,255,0.6);
+            font-family: var(--font-body);
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.15s, transform 0.1s;
+            color: var(--text-main);
+        }
+
+        .sup-btn:hover {
+            background-color: rgba(255,255,255,0.9);
+            transform: scale(1.02);
+        }
+
+        .sup-btn-danger {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* Geocerca slider */
+        .geocerca-control {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .geocerca-control input[type="range"] {
+            flex: 1;
+            accent-color: #22c55e;
+            height: 4px;
+        }
+
+        .geocerca-control label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* Status indicator */
+        .status-pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: white;
+            background-color: #64748b;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CABECERA -->
+    <header class="app-header">
+        <div class="brand-section">
+            <div class="brand-logo"></div>
+            <h1 class="brand-title">MANAMAT Logistics</h1>
+            <span class="brand-subtitle">Simulador Hibrido v2</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <span class="status-pill" id="status-indicator">PENDIENTE</span>
+            <div style="font-size: 0.8rem; font-weight: 600; opacity: 0.85;">
+                UMAEE
+            </div>
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="main-viewport">
+
+        <!-- LADO IZQUIERDO: SIMULADOR CHOFER (MÓVIL) -->
+        <section class="operator-panel">
+            <div class="smartphone-frame">
+                <!-- Selector de dispositivo a simular -->
+                <div style="background-color: var(--primary); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.15); z-index: 110;">
+                    <label style="color: white; font-size: 0.65rem; font-weight: bold; font-family: var(--font-body);">Simular Celular de:</label>
+                    <select id="simulated-unit-select" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: white; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; font-weight: bold; outline: none; cursor: pointer; font-family: var(--font-body);">
+                        <!-- Opciones cargadas dinámicamente -->
+                    </select>
+                </div>
+
+                <!-- Contenido de la Pantalla del Teléfono -->
+                <div class="phone-screen" id="phone-screen-container" style="position: relative; display: flex; flex-direction: column;">
+                    
+                    <!-- PANTALLA DE INVITACIÓN DE DESPACHO (OCULTA POR DEFECTO) -->
+                    <div id="phone-invitation-screen" style="display: none; position: absolute; inset: 0; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px; background: radial-gradient(circle, oklch(0.25 0.05 250) 0%, oklch(0.12 0.01 250) 100%); color: white; z-index: 200;">
+                        <div style="width: 70px; height: 70px; background-color: var(--accent-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); animation: pulseBlue 1.5s infinite;">🚚</div>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">Nueva Carga Asignada</h3>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">El supervisor de despacho UMAEE te ha asignado una nueva entrega de materiales de construcción.</p>
+                        
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; width: 100%; text-align: left; margin-bottom: 24px;">
+                            <div style="font-size: 0.6rem; color: #64748b; font-weight: bold; text-transform: uppercase;">ID ORDEN</div>
+                            <div id="invite-order-id" style="font-weight: 800; font-size: 1rem; color: var(--accent-blue);">ORD-0000</div>
+                            <div style="font-size: 0.6rem; color: #64748b; font-weight: bold; margin-top: 8px; text-transform: uppercase;">SITIO DE DESTINO</div>
+                            <div id="invite-order-dest" style="font-weight: 700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-white);">--</div>
+                        </div>
+
+                        <button class="phone-btn phone-btn-primary" id="btn-phone-accept" style="background-color: var(--accent-green);">
+                            Aceptar Asignación
+                        </button>
+                        <button class="phone-btn" id="btn-phone-reject" style="background-color: var(--accent-red); color: white; margin-top: 8px;">
+                            Rechazar Asignación
+                        </button>
+                    </div>
+
+                    <!-- PANTALLA DE ESPERA DE ORDEN (MOSTRADA POR DEFECTO) -->
+                    <div id="phone-waiting-screen" style="display: flex; flex: 1; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px; color: var(--text-muted);">
+                        <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;">💤</div>
+                        <h4 style="font-weight: 700; color: var(--primary); margin-bottom: 8px; font-family: var(--font-heading);">En Espera de Flete</h4>
+                        <p style="font-size: 0.75rem; line-height: 1.4;">Tu unidad se encuentra disponible en Planta Central MANAMAT. Esperando flete asignado por el supervisor.</p>
+                    </div>
+
+                    <!-- PANTALLA ACTIVA DE TRABAJO (OCULTA POR DEFECTO) -->
+                    <div id="phone-active-work-screen" style="display: none; flex: 1; flex-direction: column;">
+                        <!-- Encabezado de App -->
+                        <div class="phone-header">
+                            <div class="phone-user">
+                                <div class="phone-avatar" id="phone-avatar-text">CH</div>
+                                <div class="phone-user-info">
+                                    <h4 id="phone-driver-name">Carlos Hernandez</h4>
+                                    <span id="phone-unit-id-tag">Operador - UN-07</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.65rem; background: #22c55e; color: white; padding: 2px 6px; border-radius: 10px; font-weight: 700;">EN VIAJE</span>
+                            </div>
+                        </div>
+
+                        <!-- Datos del flete -->
+                        <div class="order-card">
+                            <div class="order-title">
+                                <span>Envio Asignado</span>
+                                <span style="color: var(--accent-blue);" id="phone-order-id">ORD-9982</span>
+                            </div>
+                            <div class="order-spec" style="font-weight: 600; margin-bottom: 8px;">
+                                Cliente: <span id="phone-order-client">Ing. R. Martinez</span>
+                            </div>
+                            
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+                                Detalle de Carga util
+                            </div>
+                            <div id="phone-materials" style="display: flex; flex-direction: column; gap: 4px;">
+                            </div>
+                            
+                            <!-- Alerta de sobrecarga si aplica -->
+                            <div id="alert-sobrecarga"></div>
+                        </div>
+
+                        <div style="background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; font-size: 0.75rem; line-height: 1.4; margin-bottom: 16px;">
+                            <b style="color: var(--accent-blue); display:block; margin-bottom: 4px;">Instrucciones del Pedido:</b>
+                            Entregar en la entrada principal de la obra. Solicitar firma de conformidad y registrar la evidencia fotográfica de la descarga.
+                        </div>
+
+                        <!-- Sección de Evidencia Móvil (Chófer) -->
+                        <div id="phone-evidence-section" style="display: none; background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm);">
+                            <b style="color: var(--accent-orange); display:block; margin-bottom: 6px; font-size: 0.75rem;">📸 Evidencia y Reporte de Entrega</b>
+                            <button class="phone-btn phone-btn-primary" id="btn-phone-capture" style="padding: 8px; font-size: 0.75rem; margin-bottom: 10px; background-color: var(--primary);">
+                                📷 Capturar Foto de Materiales
+                            </button>
+                            <div id="phone-captured-preview" style="display: none; margin-bottom: 10px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+                                <!-- Imagen/SVG simulada de la entrega -->
+                                <svg viewBox="0 0 100 60" style="background:#cbd5e1; width:100%; height:80px; display:block;">
+                                    <path d="M 0 50 Q 50 40 100 50 L 100 60 L 0 60 Z" fill="#94a3b8" />
+                                    <rect x="25" y="30" width="20" height="10" fill="#788896" stroke="#475569" stroke-width="0.8" />
+                                    <rect x="47" y="32" width="20" height="10" fill="#788896" stroke="#475569" stroke-width="0.8" />
+                                    <rect x="36" y="20" width="20" height="10" fill="#788896" stroke="#475569" stroke-width="0.8" />
+                                    <line x1="10" y1="45" x2="85" y2="40" stroke="#334155" stroke-width="2" />
+                                    <line x1="15" y1="48" x2="90" y2="43" stroke="#334155" stroke-width="2" />
+                                    <text x="50" y="55" fill="white" font-size="5" font-weight="bold" text-anchor="middle" opacity="0.8">EVIDENCIA REGISTRADA</text>
+                                </svg>
+                            </div>
+                            <div style="margin-top: 6px;">
+                                <label style="font-size: 0.65rem; font-weight: bold; color: var(--text-muted);">Material defectuoso/dañado (piezas):</label>
+                                <input type="number" id="phone-damaged-count" class="form-input" style="padding: 6px; font-size: 0.75rem; margin-top: 4px; width: 100%; border: 1px solid var(--border); border-radius: 4px;" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Acciones del Chofer -->
+                        <div class="phone-actions">
+                            <button class="phone-btn phone-btn-primary" id="btn-iniciar-carga">
+                                Iniciar Carga de Materiales
+                            </button>
+                            <button class="phone-btn phone-btn-disabled" id="btn-salida-obra">
+                                Salida a Obra
+                            </button>
+                            <button class="phone-btn phone-btn-disabled" id="btn-iniciar-descarga" style="display: none;">
+                                ⚡ Iniciar Descarga de Materiales
+                            </button>
+                            <button class="phone-btn phone-btn-disabled" id="btn-confirmar-entrega" style="display: none;">
+                                Confirmar Entrega (Firma)
+                            </button>
+                            <button class="phone-btn phone-btn-disabled" id="btn-iniciar-retorno" style="display: none;">
+                                Iniciar Retorno a Planta
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- LADO DERECHO: PANEL DESPACHO (DESKTOP) -->
+        <section class="supervisor-panel">
+            
+            <!-- Banner de Alerta -->
+            <div class="alert-banner" id="alert-desvio" style="display: none;">
+                <span>Unidad fuera del trazo de ruta obligatorio.</span>
+            </div>
+
+            <!-- Mapa -->
+            <div id="map"></div>
+
+            <!-- Panel Flotante Izquierdo (Consola de Despacho) -->
+            <div class="supervisor-left-overlay">
+                
+                <div class="glass-card">
+                    <div class="overlay-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Consola de Despacho</span>
+                        <button class="toggle-collapse-btn" onclick="toggleCardCollapse(this)">[-]</button>
+                    </div>
+                    <div class="card-content">
+                        <!-- Selección de Destino -->
+                        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; margin-bottom:4px;">DIRECCIÓN DE ENTREGA</div>
+                        <div class="search-box" style="margin-bottom: 8px;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--text-muted)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" class="search-input" id="search-input" placeholder="Buscar dirección u obra..." autocomplete="off">
+                        </div>
+                        <div class="search-suggestions" id="search-suggestions"></div>
+
+                        <!-- Ubicaciones Predefinidas -->
+                        <div style="margin-bottom: 8px;">
+                            <div id="predefined-sites-wrapper">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;" id="predefined-sites-container">
+                                    <button class="sup-btn" style="padding:4px; font-size:0.6rem; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="seleccionarUbicacionPredefinida('Residencial Palmas', 17.9782, -92.9248)">📍 Residencial Palmas</button>
+                                    <button class="sup-btn" style="padding:4px; font-size:0.6rem; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="seleccionarUbicacionPredefinida('Oxxo Tabasco 2000', 17.9972, -92.9348)">📍 Oxxo Tabasco 2000</button>
+                                    <button class="sup-btn" style="padding:4px; font-size:0.6rem; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="seleccionarUbicacionPredefinida('Bodega Sendero', 18.0050, -92.9020)">📍 Bodega Sendero</button>
+                                    <button class="sup-btn" style="padding:4px; font-size:0.6rem; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="seleccionarUbicacionPredefinida('Distribuidora Centro', 17.9868, -92.9303)">📍 Distribuidora Centro</button>
+                                    <button class="sup-btn" style="padding:4px; font-size:0.6rem; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" onclick="seleccionarUbicacionPredefinida('Obra Ixtacomitán', 17.9400, -92.9550)">📍 Obra Ixtacomitán</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Geocerca Status (Fija en 150m) -->
+                        <div style="margin-bottom: 10px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size: 0.65rem; font-weight: bold; color: var(--text-muted);">Radio de Geocerca:</span>
+                            <span style="font-size:0.7rem; font-weight:800; color: var(--accent-green);">150m (Fijo)</span>
+                        </div>
+
+                        <!-- Inputs de Despacho -->
+                        <div style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px;">
+                            <div id="dispatch-inputs-wrapper" style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.7rem; font-weight:600; color: var(--text-main);">Camión:</span>
+                                    <select id="dispatch-unit-select" style="font-size:0.75rem; padding: 2px 4px; border: 1px solid var(--border); border-radius:4px; outline:none; background:white; font-weight:bold; cursor:pointer;">
+                                        <!-- Opciones dinámicas -->
+                                    </select>
+                                </div>
+                                <button class="phone-btn phone-btn-primary" id="btn-dispatch-order" style="padding:8px; font-size:0.75rem; background-color: var(--accent-blue); font-weight:800; border-radius: var(--radius-sm);">
+                                    🚀 Despachar y Notificar Chófer
+                                </button>
+                            </div>
+                            <div id="dispatch-success-badge" style="display: none; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px; padding: 10px; text-align: center;">
+                                <span style="color: #22c55e; font-size: 0.75rem; font-weight: bold; display: block;">✓ Unidad <span id="success-unit-id">--</span> Despachada</span>
+                                <button class="sup-btn" style="margin-top: 6px; padding: 4px 8px; font-size: 0.6rem; width: 100%;" onclick="mostrarInputsDespacho()">Despachar Otra Unidad</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel Flotante Derecho -->
+            <div class="supervisor-right-overlay">
+                
+                <!-- METRICAS DE TRÁNSITO -->
+                <div class="glass-card">
+                    <div class="overlay-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span id="metrics-card-title">Métricas de Unidad Activa</span>
+                        <button class="toggle-collapse-btn" onclick="toggleCardCollapse(this)">[-]</button>
+                    </div>
+                    
+                    <div class="card-content">
+                        <!-- Selector de Vista del Supervisor -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                            <span style="font-size:0.7rem; font-weight:bold; color:var(--text-muted);">Visualización:</span>
+                            <div style="display:flex; gap:4px;">
+                                <button class="sup-btn" id="btn-view-general" style="padding: 3px 8px; font-size:0.6rem; background-color: #3b82f6; color: white; width:auto;">Vista General</button>
+                                <button class="sup-btn" id="btn-view-focused" style="padding: 3px 8px; font-size:0.6rem; width:auto;">Enfocada</button>
+                                <button class="sup-btn" id="btn-toggle-panels" style="padding: 3px 8px; font-size:0.6rem; width:auto;">Ocultar Historiales</button>
+                            </div>
+                        </div>
+
+                        <div class="mini-stats">
+                            <div class="stat-box">
+                                <div class="stat-label">Dist. Restante</div>
+                                <div class="stat-value" id="stat-distancia">-- km</div>
+                                <div style="font-size:0.55rem;color:var(--text-muted);font-weight:600;" id="stat-distancia-total"></div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">ETA Dinámico</div>
+                                <div class="stat-value" id="stat-eta">--</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Velocidad</div>
+                                <div class="stat-value" id="stat-velocidad">0 km/h</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Cronómetro</div>
+                                <div class="stat-value" id="stat-cronometro">00:00</div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Progreso -->
+                        <div class="progress-container" style="margin-top: 10px;">
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                            </div>
+                            <div class="progress-label">
+                                <span>Progreso del viaje</span>
+                                <span id="progress-text">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Detalle de Carga Útil en Tránsito -->
+                        <div style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px; margin-top: 10px;">
+                            <label style="font-size: 0.65rem; font-weight: bold; color: var(--text-muted); display:block; margin-bottom:4px;">Carga Útil Declarada:</label>
+                            <div style="display:flex; flex-direction:column; gap:4px;" id="supervisor-payload-details">
+                                <!-- Rellenado dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Acciones del Supervisor -->
+                        <div class="supervisor-actions" style="margin-top: 10px;">
+                            <button class="sup-btn" id="btn-pausar">Pausar</button>
+                            <button class="sup-btn" id="btn-follow">Seguir</button>
+                            <button class="sup-btn" id="btn-trafico" style="border-color: var(--accent-orange); color: var(--accent-orange); background: rgba(234, 88, 12, 0.05);">Simular Trafico</button>
+                            <button class="sup-btn sup-btn-danger" id="btn-cancelar">Cancelar</button>
+                            <button class="sup-btn" id="btn-ver-seguimiento-cliente" style="width: 100%; margin-top: 4px; border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59, 130, 246, 0.05); font-weight: 800;">Enlace de Seguimiento de Cliente</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MONITOR DE ESTADO DE LA FLOTA -->
+                <div class="glass-card">
+                    <div class="overlay-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Estado de la Flota (7 Unidades)</span>
+                        <button class="toggle-collapse-btn" onclick="toggleCardCollapse(this)">[-]</button>
+                    </div>
+                    <div class="card-content">
+                        <div style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;" id="fleet-list-container">
+                            <!-- Rellenado dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Viajes Completados -->
+                <div class="glass-card" id="card-historial-viajes">
+                    <div class="overlay-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Historial de Viajes Completados</span>
+                        <button class="toggle-collapse-btn" onclick="toggleCardCollapse(this)">[-]</button>
+                    </div>
+                    <div class="card-content">
+                        <div style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto;" id="completed-trips-container">
+                            <span style="font-size:0.7rem; color:var(--text-muted); font-style:italic;">No hay viajes registrados.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visor de Evidencia de Entrega POD (Supervisor) -->
+                <div class="glass-card" id="supervisor-pod-card" style="display: none; border-color: #22c55e;">
+                    <div class="overlay-title" style="color: #22c55e; border-bottom: 1px solid rgba(34, 197, 94, 0.2);">📦 Evidencia POD Recibida</div>
+                    <div style="font-size: 0.7rem; line-height: 1.4; margin-bottom: 8px;">
+                        <b>Material defectuoso/rechazado:</b> <span id="pod-damaged-qty" style="color:#ef4444; font-weight:bold;">0</span> piezas.<br>
+                        <b>Firmado digitalmente:</b> <span style="color:#22c55e; font-weight:bold;">✓ Verificado en Sitio</span>
+                    </div>
+                    <div id="pod-photo-container" style="border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 6px; background-color: #f1f5f9;">
+                        <!-- SVG de la foto se inyectará aquí -->
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-style: italic;">
+                        Documentación de entrega archivada automáticamente en UMAEE Cloud.
+                    </div>
+                </div>
+
+                <!-- Bitacora de Eventos -->
+                <div class="glass-card" id="card-historial-eventos" style="display: flex; flex-direction: column;">
+                    <div class="overlay-title" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>Historial de Eventos</span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="sup-btn" id="btn-copiar-log" style="padding:2px 6px;font-size:0.55rem; width:auto;">Copiar</button>
+                            <button class="toggle-collapse-btn" onclick="toggleCardCollapse(this)">[-]</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="event-log-container" id="event-log" style="max-height: 120px;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Cargando Leaflet Map Library -->
+    <script src="lib/leaflet.js"></script>
+    
+    <!-- VISTA DE SEGUIMIENTO DE CLIENTE (MODAL FLOTANTE) -->
+    <div id="client-tracking-view" style="display: none; position: fixed; inset: 0; background: var(--bg-base); z-index: 2000; flex-direction: column; font-family: var(--font-body);">
+        <header class="app-header" style="background-color: var(--primary); padding: 12px 24px;">
+            <div class="brand-section">
+                <div class="brand-logo"></div>
+                <h1 class="brand-title" style="font-size: 1.1rem;">MANAMAT Seguimiento</h1>
+                <span class="brand-subtitle" style="font-size: 0.65rem; background: rgba(255,255,255,0.15);">Portal del Cliente</span>
+            </div>
+            <button class="sup-btn" id="btn-cerrar-cliente" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 6px 16px; font-size: 0.7rem;">Volver a Consola</button>
+        </header>
+        <div style="flex: 1; display: flex; position: relative;">
+            <!-- Mapa Simplificado del Cliente -->
+            <div id="client-map" style="flex: 1; z-index: 1;"></div>
+            
+            <!-- Panel Lateral de Estado del Cliente -->
+            <div style="width: 340px; background: white; border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 16px; z-index: 10; box-shadow: -4px 0 16px rgba(0,0,0,0.05); overflow-y: auto;">
+                <div style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                    <span style="font-size: 0.6rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Folio de Pedido</span>
+                    <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--accent-blue);" id="client-order-id">ORD-9982</h3>
+                </div>
+                
+                <!-- Progreso Visual -->
+                <div>
+                    <div style="font-size: 0.7rem; font-weight: bold; color: var(--text-main); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                        <span>Progreso de Entrega</span>
+                        <span id="client-progress-text">0%</span>
+                    </div>
+                    <div class="progress-bar-track" style="height: 10px;">
+                        <div class="progress-bar-fill" id="client-progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Detalles de Ruta -->
+                <div class="mini-stats" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="stat-box" style="padding: 8px; background: var(--bg-base);">
+                        <div class="stat-label" style="font-size: 0.55rem;">Distancia Restante</div>
+                        <div class="stat-value" id="client-stat-distancia" style="font-size: 1rem;">-- km</div>
+                    </div>
+                    <div class="stat-box" style="padding: 8px; background: var(--bg-base);">
+                        <div class="stat-label" style="font-size: 0.55rem;">Llegada Estimada</div>
+                        <div class="stat-value" id="client-stat-eta" style="font-size: 1rem;">--</div>
+                    </div>
+                </div>
+
+                <!-- Checklist de Estados -->
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <div class="client-step" id="step-cargando" style="display: flex; align-items: flex-start; gap: 10px; opacity: 0.4;">
+                        <div class="step-dot" style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-muted); background: white; margin-top: 2px; flex-shrink: 0;"></div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">Cargando Materiales</div>
+                            <div style="font-size: 0.6rem; color: var(--text-muted);">Preparacion de la carga util en patio central</div>
+                        </div>
+                    </div>
+                    <div class="client-step" id="step-camino" style="display: flex; align-items: flex-start; gap: 10px; opacity: 0.4;">
+                        <div class="step-dot" style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-muted); background: white; margin-top: 2px; flex-shrink: 0;"></div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">En Transito a Destino</div>
+                            <div style="font-size: 0.6rem; color: var(--text-muted);">Unidad logistica navegando hacia la obra</div>
+                        </div>
+                    </div>
+                    <div class="client-step" id="step-descarga" style="display: flex; align-items: flex-start; gap: 10px; opacity: 0.4;">
+                        <div class="step-dot" style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-muted); background: white; margin-top: 2px; flex-shrink: 0;"></div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">Maniobra de Descarga</div>
+                            <div style="font-size: 0.6rem; color: var(--text-muted);">Unidad en obra descargando y validando materiales</div>
+                        </div>
+                    </div>
+                    <div class="client-step" id="step-entregado" style="display: flex; align-items: flex-start; gap: 10px; opacity: 0.4;">
+                        <div class="step-dot" style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-muted); background: white; margin-top: 2px; flex-shrink: 0;"></div>
+                        <div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">Entrega Completada</div>
+                            <div style="font-size: 0.6rem; color: var(--text-muted);">Materiales entregados de conformidad con firma digital</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; font-size: 0.65rem; color: var(--text-muted); text-align: center; font-style: italic;">
+                    Este enlace expira al completarse la entrega.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modulos e Inicializacion de la aplicacion -->
+    <script src="lib/leaflet.js"></script>
+    <script src="data/demoData.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/events.js"></script>
+    <script src="assets/js/map.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/fleet.js"></script>
+    <script src="assets/js/orders.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
+
